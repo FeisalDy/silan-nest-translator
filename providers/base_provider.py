@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Union, List
+ import logging
 
 import memoization
 memoization.suppress_warnings()
@@ -15,6 +16,8 @@ try:
     from .utils import hash_input, pop_half_dict
 except ImportError:
     from utils import hash_input, pop_half_dict
+
+logger = logging.getLogger(__name__)
 
 
 # Cache the fail prompt to avoid running translation again for subsequent calls
@@ -112,17 +115,17 @@ class Provider(ABC):
             # Check if the exception is unavoidable by matching the prompt with the cache fail prompt key
             if parametrized_hash in GLOBAL_CACHE_FAIL_PROMPT:
                 if isinstance(input_data, list) and GLOBAL_CACHE_FAIL_PROMPT[parametrized_hash] >= GLOBAL_MAX_LIST_RETRIES:
-                    print(f"\nUnavoidable exception: {e}\nGlobal max retries reached for list translation")
+                    logger.warning("Unavoidable exception: %s\nGlobal max retries reached for list translation", e)
                     return [fail_translation_code, fail_translation_code]
                 elif isinstance(input_data, str) and GLOBAL_CACHE_FAIL_PROMPT[parametrized_hash] >= GLOBAL_MAX_STRING_RETRIES:
-                    print(f"\nUnavoidable exception: {e}\nGlobal max retries reached for string translation")
+                    logger.warning("Unavoidable exception: %s\nGlobal max retries reached for string translation", e)
                     return fail_translation_code
                 else:
                     GLOBAL_CACHE_FAIL_PROMPT[parametrized_hash] += 1
             else:
                 GLOBAL_CACHE_FAIL_PROMPT[parametrized_hash] = 1
-            
-            print(f"\nCurrent global fail cache: {GLOBAL_CACHE_FAIL_PROMPT}\n")
+
+            logger.debug("Current global fail cache: %s", GLOBAL_CACHE_FAIL_PROMPT)
             raise e
 
 

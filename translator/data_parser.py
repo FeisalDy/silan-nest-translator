@@ -262,11 +262,11 @@ class DataParser(metaclass=ForceBaseCallMeta):
                 if type == "list":
                     for data in example[key]:
                         if len(data) > self.max_example_length:
-                            warnings.warn(f"Example" + example["qas_id"] + " have field len larger than {self.max_example_length}, truncating...")
+                            # warnings.warn(f"Example" + example["qas_id"] + " have field len larger than {self.max_example_length}, truncating...")
                             example[key].append(data[:self.max_example_length])
                 else:
                     if len(example[key]) > self.max_example_length:
-                        warnings.warn(f"Example" + example["qas_id"] + " have field len larger than {self.max_example_length}, truncating...")
+                        # warnings.warn(f"Example" + example["qas_id"] + " have field len larger than {self.max_example_length}, truncating...")
                         example[key] = example[key][:self.max_example_length]
 
                 if self.enable_sub_task_thread:

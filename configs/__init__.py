@@ -4,3 +4,4 @@ from .dialogs_config import DialogsConfig
 from .corpus_config import CorpusConfig
 from .kto_config import KTOConfig
 from .config import Config
+from .silan_config import SilanConfig

@@ -1,4 +1,6 @@
 import sys
+import asyncio
+import inspect
 from typing import Union, List
 sys.path.insert(0, r'/')
 from googletrans import Translator
@@ -8,6 +10,25 @@ try:
     from .base_provider import Provider
 except ImportError:
     from base_provider import Provider
+
+
+def _run_sync(coro):
+    """Run an awaitable synchronously, handling the case where an event loop
+    is already running (e.g. inside an async BullMQ worker)."""
+    if not inspect.isawaitable(coro):
+        return coro
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            return pool.submit(asyncio.run, coro).result()
+    else:
+        return asyncio.run(coro)
+
 
 # https://github.com/ssut/py-googletrans
 # This is the best reliable provider, as this has access to API call instead of using the crawling method
@@ -51,7 +72,9 @@ class GoogleProvider(Provider):
         data_type = "list" if isinstance(input_data, list) else "str"
 
         try:
-            return self.extract_texts(self.translator.translate(input_data, src=src, dest=dest))
+            result = self.translator.translate(input_data, src=src, dest=dest)
+            result = _run_sync(result) if inspect.isawaitable(result) else result
+            return self.extract_texts(result)
         # TypeError likely due to gender-specific translation, which has no fix yet. Please refer to
         # ssut/py-googletrans#260 for more info
         except TypeError:
