@@ -70,6 +70,13 @@ _SQL_INSERT_CHAPTER_TRANSLATION = """
     VALUES (%(id)s, %(chapter_id)s, %(language_code)s, %(title)s, %(content)s, false);
 """
 
+_SQL_UPSERT_NOVEL_ALIASES = """
+    INSERT INTO novel_aliases (id, novel_id, language_code, alias_title)
+    VALUES (%(id)s, %(novel_id)s, %(language_code)s, %(alias_title)s)
+    ON CONFLICT (novel_id, alias_title)
+    DO NOTHING
+"""
+
 
 class SilanNest(DataParser):
     """
@@ -341,6 +348,15 @@ class SilanNest(DataParser):
                         "language_code": self.target_lang,
                         "title": cr["title"],
                         "content": content,
+                    })
+
+                # --- Optionally upsert novel aliases based on the translated title ---
+                for nr in novel_rows:
+                    cur.execute(_SQL_UPSERT_NOVEL_ALIASES, {
+                        "id": str(uuid.uuid4()),
+                        "novel_id": nr["entity_id"],
+                        "language_code": self.target_lang,
+                        "alias_title": nr["title"],
                     })
 
         logger.info(
